@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Typing Speed Tester</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <div class="nav-bar">
+    <a href="../index.html">Resume</a> |
+    <a href="../scratch/scratch.html">Bench Press Guide</a> |
+    <a href="#">Web App</a>
+  </div>
+  
+  <div class="container">
+    <h1>⌨️ Typing Speed Tester</h1>
+
+    <label for="difficulty">Choose difficulty:</label>
+    <select id="difficulty">
+      <option value="easy">Easy</option>
+      <option value="medium">Medium</option>
+      <option value="hard">Hard</option>
+    </select>
+
+    <p id="quote">Click start to get a sentence.</p>
+    <textarea id="input" placeholder="Start typing here..." disabled></textarea>
+    
+    <div id="realtime">Time left: <span id="time">60</span>s | WPM: <span id="wpm">0</span></div>
+    <div id="results"></div>
+    <button onclick="startTest()">Start Test</button>
+  </div>
+
+  <!-- Confetti and sounds -->
+  <canvas id="confetti-canvas" class="hidden"></canvas>
+  <audio id="ding" src="https://freesound.org/data/previews/170/170664_2437358-lq.mp3"></audio>
+
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <script>
+    const quotes = {
+      easy: [
+        "Coding is fun and creative.",
+        "Typing helps improve speed.",
+        "Focus on what you can do today."
+      ],
+      medium: [
+        "JavaScript allows interactivity on web pages.",
+        "Consistency is the key to growth and mastery.",
+        "Push yourself to go beyond what is comfortable."
+      ],
+      hard: [
+        "The quick onyx goblin jumps over the lazy dwarf.",
+        "Sympathizing would fix Quaker objectives, Johnson vowed.",
+        "Grumpy wizards make toxic brew for the evil queen and jack."
+      ]
+    };
+
+    let currentQuote = "";
+    let timer;
+    let startTime;
+    let interval;
+    let bestWPM = localStorage.getItem("bestWPM") || 0;
+
+    const quoteEl = document.getElementById("quote");
+    const inputEl = document.getElementById("input");
+    const timeEl = document.getElementById("time");
+    const wpmEl = document.getElementById("wpm");
+    const resultsEl = document.getElementById("results");
+    const dingSound = document.getElementById("ding");
+
+    function startTest() {
+      const difficulty = document.getElementById("difficulty").value;
+      const quoteList = quotes[difficulty];
+      currentQuote = quoteList[Math.floor(Math.random() * quoteList.length)];
+      quoteEl.textContent = currentQuote;
+      inputEl.value = "";
+      inputEl.disabled = false;
+      inputEl.focus();
+      timeEl.textContent = 60;
+      wpmEl.textContent = 0;
+      resultsEl.textContent = "";
+      startTime = new Date();
+      clearInterval(interval);
+      clearTimeout(timer);
+
+      interval = setInterval(updateRealtime, 1000);
+      timer = setTimeout(endTest, 60000);
+
+      document.getElementById("confetti-canvas").classList.add("hidden");
+    }
+
+    function updateRealtime() {
+      const timeLeft = parseInt(timeEl.textContent);
+      if (timeLeft > 0) {
+        timeEl.textContent = timeLeft - 1;
+        const elapsed = 60 - (timeLeft - 1);
+        const wordCount = inputEl.value.trim().split(/\s+/).length;
+        const wpm = Math.round((wordCount / elapsed) * 60);
+        wpmEl.textContent = isNaN(wpm) ? 0 : wpm;
+      }
+    }
+
+    function endTest() {
+      clearInterval(interval);
+      inputEl.disabled = true;
+      const elapsed = 60;
+      const typed = inputEl.value;
+      const wordCount = typed.trim().split(/\s+/).length;
+      const correctChars = typed.split("").filter((c, i) => c === currentQuote[i]).length;
+      const accuracy = Math.round((correctChars / currentQuote.length) * 100);
+      const wpm = Math.round((wordCount / elapsed) * 60);
+
+      if (wpm > bestWPM) {
+        localStorage.setItem("bestWPM", wpm);
+        bestWPM = wpm;
+        resultsEl.textContent = `🎉 New High Score! WPM: ${wpm} | Accuracy: ${accuracy}%`;
+      } else {
+        resultsEl.textContent = `✅ WPM: ${wpm} | Accuracy: ${accuracy}% | Best WPM: ${bestWPM}`;
+      }
+
+      // Play ding and confetti
+      dingSound.play();
+      document.getElementById("confetti-canvas").classList.remove("hidden");
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    }
+  </script>
+</body>
+</html>
